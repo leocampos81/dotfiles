@@ -25,32 +25,67 @@ setopt AUTO_MENU                                        # Usar menú en la segun
 # 4. Solución rápida para el botón Borrar (BackSpace) en SecureCRT
 bindkey "^?" backward-delete-char
 bindkey "^[[3~" delete-char
+
 # ==========================================
 # ALIAS Y FUNCIONES DE SYSADMIN
 # ==========================================
 
-# Redes y Puertos (usando ss que ya prefieres)
+# Redes y Puertos (usando ss)
 alias ports="sudo ss -tulpn"
 alias myip="curl -s ifconfig.me && echo"
 
 # Logs y Monitoreo rápido
-alias jnl="journalctl -u" # Uso: jnl nginx para ver logs de systemd
+alias jnl="journalctl -u"
 
-# Docker rápido (si usas contenedores)
+# Docker rápido
 alias dps="docker ps --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}'"
 alias dlogs="docker logs -f --tail=100"
 
-# Búsqueda de archivos ultra rápida (si usas fd)
-alias fcat="bat" # Si usas bat en lugar de cat
+# Búsqueda de archivos
+alias fcat="bat"
 
 # Prompt personalizado para Sysadmin
-autoload -U colors && colors
+# Cargar módulos de prompt de Zsh
+autoload -U promptinit && promptinit
+
+# Prompt personalizado y seguro para Sysadmin
 if [ "$EUID" -eq 0 ]; then
-    # Si eres root, el prompt se pone rojo de advertencia
-    PROMPT='%B%{$fg[red]%}%n@%m %{$fg[blue]%}%~ %# %b%{$reset_color%}'
+    # Root: Prompt en rojo de advertencia
+    PROMPT='%F{red}%n@%m%f %F{blue}%~%f # '
 else
-    # Si eres usuario normal, va en verde/azul clásico
-    PROMPT='%B%{$fg[green]%}%n@%m %{$fg[blue]%}%~ %# %b%{$reset_color%}'
+    # Usuario normal: Prompt clásico verde y azul
+    PROMPT='%F{green}%n@%m%f %F{blue}%~%f %# '
 fi
 
+# Opciones y configuración avanzada del prompt
+setopt PROMPT_SUBST
 
+# Función para mostrar el estado de error del último comando
+zle-line-init() {
+    zle reset-prompt
+}
+
+# Definir el prompt dinámico
+precmd() {
+    local exit_code=$?
+    local hora="%F{242}[%T]%f" # Hora actual en gris tenue
+    local usuario_host=""
+
+    if [ "$EUID" -eq 0 ]; then
+        usuario_host="%F{red}%n@%m%f" # Root en rojo
+    else
+        usuario_host="%F{green}%n@%m%f" # Usuario normal en verde
+    fi
+
+    local ruta="%F{cyan}%~%f" # Directorio actual en cian
+
+    # Si el último comando falló, cambia el símbolo final a rojo
+    local prompt_symbol="%# "
+    if [ $exit_code -ne 0 ]; then
+        prompt_symbol="%F{red}%#%f "
+    else
+        prompt_symbol="%F{yellow}%#%f "
+    fi
+
+    PROMPT="$hora $usuario_host $ruta $prompt_symbol"
+}

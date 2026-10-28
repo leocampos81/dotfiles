@@ -68,24 +68,34 @@ zle-line-init() {
 # Definir el prompt dinámico
 precmd() {
     local exit_code=$?
-    local hora="%F{242}[%T]%f" # Hora actual en gris tenue
+    local hora="%F{242}[%T]%f"
+    
+    # Usuario y Host
     local usuario_host=""
-
     if [ "$EUID" -eq 0 ]; then
-        usuario_host="%F{red}%n@%m%f" # Root en rojo
+        usuario_host="%F{red}%n@%m%f"
     else
-        usuario_host="%F{green}%n@%m%f" # Usuario normal en verde
+        usuario_host="%F{green}%n@%m%f"
     fi
-
-    local ruta="%F{cyan}%~%f" # Directorio actual en cian
-
-    # Si el último comando falló, cambia el símbolo final a rojo
-    local prompt_symbol="%# "
+    
+    # Ruta actual (recortada a los últimos 2 niveles para que no sea tan larga)
+    local ruta="%F{cyan}%3c%f"
+    
+    # Rama de Git (si aplica)
+    local branch=""
+    if git rev-parse --is-inside-work-tree > /dev/null 2>&1; then
+        local b_name=$(git symbolic-ref --short HEAD 2>/dev/null || git rev-parse --short HEAD 2>/dev/null)
+        branch=" %F{magenta} $b_name%f"
+    fi
+    
+    # Símbolo final según si el último comando falló o no
+    local prompt_symbol="➜"
     if [ $exit_code -ne 0 ]; then
-        prompt_symbol="%F{red}%#%f "
+        prompt_symbol="%F{red}✘%f"
     else
-        prompt_symbol="%F{yellow}%#%f "
+        prompt_symbol="%F{yellow}➜%f"
     fi
 
-    PROMPT="$hora $usuario_host $ruta $prompt_symbol"
+    # Ensamblar todo el prompt en dos líneas o una línea limpia
+    PROMPT="$hora $usuario_host $ruta$branch $prompt_symbol "
 }

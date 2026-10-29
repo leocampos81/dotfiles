@@ -37,6 +37,10 @@ alias myip="curl -s ifconfig.me && echo"
 # Logs y Monitoreo rápido
 alias jnl="journalctl -u"
 
+# estados de servicios con systemctl
+alias scs="systemctl status"
+alias sclist="systemctl list-units --type=service --state=running"
+
 # Docker rápido
 alias dps="docker ps --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}'"
 alias dlogs="docker logs -f --tail=100"
@@ -99,3 +103,11 @@ precmd() {
     # Ensamblar todo el prompt en dos líneas o una línea limpia
     PROMPT="$hora $usuario_host $ruta$branch $prompt_symbol "
 }
+
+# Teclas de navegación en Zsh
+bindkey "\e[1~" beginning-of-line  # Tecla Home
+bindkey "\e[4~" end-of-line        # Tecla End
+bindkey "\e[7~" beginning-of-line  # Algunas variantes de Home
+bindkey "\e[8~" end-of-line        # Algunas variantes de End
+bindkey "\e[H"  beginning-of-line  # Home en algunos sistemas
+bindkey "\e[F"  end-of-line        # End en algunos sistemas

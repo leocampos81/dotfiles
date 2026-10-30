@@ -111,3 +111,22 @@ bindkey "\e[7~" beginning-of-line  # Algunas variantes de Home
 bindkey "\e[8~" end-of-line        # Algunas variantes de End
 bindkey "\e[H"  beginning-of-line  # Home en algunos sistemas
 bindkey "\e[F"  end-of-line        # End en algunos sistemas
+
+
+function lsh() {
+    ls -ltrhFsAi | awk '
+    NR==1 {total=$0; next} 
+    BEGIN {print "INODO|BLQ|PERMISOS|LK|USER|GROUP|TAM|FECHA|NOMBRE"} 
+    {
+        f = $8 " " $9 " " $10
+        n = $11
+        for(i=12; i<=NF; i++) {
+            n = n " " $i
+        }
+        print $1 "|" $2 "|" $3 "|" $4 "|" $5 "|" $6 "|" $7 "|" f "|" n
+    } 
+    END {
+        print ""
+        print total
+    }' | column -t -s '|'
+}

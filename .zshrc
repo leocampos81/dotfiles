@@ -130,3 +130,62 @@ function lsh() {
         print total
     }' | column -t -s '|'
 }
+
+function sysinfo() {
+    echo "\033[1;36m===================================================\033[0m"
+    echo "\033[1;36m       ESTADO DEL SISTEMA / INFRAESTRUCTURA      \033[0m"
+    echo "\033[1;36m===================================================\033[0m"
+    echo "\033[1;33mHostname:\033[0m  $(hostname)"
+    echo "\033[1;33mKernel:\033[0m    $(uname -r)"
+    
+    # Detección limpia de la distribución Linux
+    if [ -f /etc/os-release ]; then
+        . /etc/os-release
+        echo "\033[1;33mOS:\033[0m        $PRETTY_NAME"
+    else
+        echo "\033[1;33mOS:\033[0m        $(uname -s) $(uname -m)"
+    fi
+    
+    echo "\033[1;33mUptime:\033[0m  $(uptime -p 2>/dev/null || uptime)"
+
+    echo "\n\033[1;32m--- PROCESADOR (CPU) ---\033[0m"
+    if [ -f /proc/cpuinfo ]; then
+        local cpu_model=$(grep -m1 'model name' /proc/cpuinfo | cut -d':' -f2 | xargs)
+        local cpu_cores=$(grep -c '^processor' /proc/cpuinfo)
+        echo "\033[1;33mModelo:\033[0m    $cpu_model"
+        echo "\033[1;33mNúcleos:\033[0m   $cpu_cores"
+    fi
+    echo "\033[1;33mLoad Avg:\033[0m  $(awk '{print $1", "$2", "$3}' /proc/loadavg)"
+
+    echo "\n\033[1;32m--- RED / INTERFACES ---\033[0m"
+    if command -v ip &>/dev/null; then
+        ip -o -4 addr show | awk '{print "  \033[1;33m" $2 ":\033[0m " $4}'
+    else
+        ifconfig 2>/dev/null | awk '/inet / {print "  \033[1;33m" $1 ":\033[0m " $2}'
+    fi
+    
+    echo "\n\033[1;32m--- MEMORIA RAM ---\033[0m"
+    free -h | awk 'NR==1 {print "             " $0} NR>1 {print "  " $0}'
+    
+    echo "\n\033[1;32m--- ALMACENAMIENTO (RAIZ /) ---\033[0m"
+    df -h / | awk 'NR==1 {print "  " $0} NR>1 {print "  " $0}'
+    echo "\033[1;36m===================================================\033[0m"
+}
+
+function ports() {
+    echo "\033[1;36m--- PUERTOS ESCUCHANDO (TCP/UDP) ---\033[0m"
+    ss -tulpn 2>/dev/null | awk 'NR==1 {print} NR>1 {print $0}'
+}
+
+function psg() {
+    if [ -z "$1" ]; then
+        echo "Uso: psg <nombre_proceso>"
+        return 1
+	fi
+    ps aux | grep -v grep | grep -i -- "$1"
+}
+
+function syslogs() {
+    echo "\033[1;36m--- ÚLTIMOS ERRORES DEL SISTEMA (Journalctl) ---\033[0m"
+    journalctl -p err -b --no-pager -n 20 2>/dev/null || tail -n 20 /var/log/messages
+}
